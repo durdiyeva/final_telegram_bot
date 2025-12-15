@@ -45,6 +45,32 @@ bot.on("message", async function (msg) {
   if (text.startsWith("/")) {
     return onCommands(msg);
   }
+  if (text == "📚 Kurslar") {
+    return bot.sendMessage(
+      chatId,
+      `🎓 Bizning o‘quv markazimizda quyidagi kurslar mavjud:
+
+    1️⃣ Ingliz tili  
+    2️⃣ Rus tili  
+    3️⃣ Matematika  
+    4️⃣ Dasturlash (Python, Web)  
+    5️⃣ Grafik dizayn  
+    
+    👇 Quyidagi kurslardan birini tanlang va batafsil ma’lumot oling:
+    `,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🇬🇧 Ingliz tili", callback_data: "english" }],
+            [{ text: "🇷🇺 Rus tili", callback_data: "russian" }],
+            [{ text: "🧮 Matematika", callback_data: "math" }],
+            [{ text: "💻 Dasturlash", callback_data: "it" }],
+            [{ text: "🎨 Grafik dizayn", callback_data: "design" }],
+          ],
+        },
+      }
+    );
+  }
 
   return onError();
 });
@@ -67,13 +93,15 @@ bot.on("callback_query", async function (query) {
         text: `Siz hali obuna bo'lmadingiz... ❌`,
         show_alert: true
       })
-    } else {
+    }
+
+    else {
 
       bot.deleteMessage(chatId, messageId)
 
-       return bot.sendMessage(
-      chatId,
-      `
+      return bot.sendMessage(
+        chatId,
+        `
           👋 Assalomu alaykum, ${firstname}!
   
   📚 100x Academy o‘quv markazining rasmiy botiga xush kelibsiz!
@@ -86,17 +114,17 @@ bot.on("callback_query", async function (query) {
   Quyidagi menyudan kerakli bo‘limni tanlang 👇
   
           `,
-      {
-        reply_markup: {
-          keyboard: [
-            [{ text: "📚 Kurslar" }, { text: "✍️ Ro‘yxatdan o‘tish" }],
-            [{ text: "ℹ️ Markaz haqida" }, { text: "💬 Fikr bildirish" }],
-            [{ text: "❓ Yordam" }],
-          ],
-          resize_keyboard: true,
-        },
-      }
-    );
+        {
+          reply_markup: {
+            keyboard: [
+              [{ text: "📚 Kurslar" }, { text: "✍️ Ro‘yxatdan o‘tish" }],
+              [{ text: "ℹ️ Markaz haqida" }, { text: "💬 Fikr bildirish" }],
+              [{ text: "❓ Yordam" }],
+            ],
+            resize_keyboard: true,
+          },
+        }
+      );
     }
   }
 });
