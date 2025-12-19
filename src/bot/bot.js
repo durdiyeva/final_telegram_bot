@@ -2,8 +2,11 @@ import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import onCommands from "./handlers/message/onCommands.js";
 import onError from "./handlers/message/onError.js";
+import onCourses from "./handlers/message/onCourses.js";
+import User from "../models/User.js";
 dotenv.config();
-const CHANNEL_ID = "@IT_Park91";
+const CHANNEL_ID = "@academy_100x_uz";
+const ADMIN_ID = 875072364;
 
 export const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
@@ -11,6 +14,8 @@ bot.on("message", async function (msg) {
   const chatId = msg.chat.id;
   const firstname = msg.chat.first_name;
   const text = msg.text;
+
+  let user = await User.findOne({ chatId });
 
   const chatMember = await bot.getChatMember(CHANNEL_ID, chatId);
 
@@ -26,8 +31,8 @@ bot.on("message", async function (msg) {
           inline_keyboard: [
             [
               {
-                text: "Bot 91 Channel",
-                url: "https://t.me/IT_Park91",
+                text: "100x Academy Xiva",
+                url: "https://t.me/academy_100x_uz",
               },
             ],
             [
@@ -45,43 +50,54 @@ bot.on("message", async function (msg) {
   if (text.startsWith("/")) {
     return onCommands(msg);
   }
-  if (text == "📚 Kurslar") {
-    return bot.sendMessage(
-      chatId,
-      `🎓 Bizning o‘quv markazimizda quyidagi kurslar mavjud:
 
-    1️⃣ Ingliz tili  
-    2️⃣ Rus tili  
-    3️⃣ Matematika  
-    4️⃣ Dasturlash (Python, Web)  
-    5️⃣ Grafik dizayn  
-    
-    👇 Quyidagi kurslardan birini tanlang va batafsil ma’lumot oling:
-    `,
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "🇬🇧 Ingliz tili", callback_data: "english" }],
-            [{ text: "🇷🇺 Rus tili", callback_data: "russian" }],
-            [{ text: "🧮 Matematika", callback_data: "math" }],
-            [{ text: "💻 Dasturlash", callback_data: "it" }],
-            [{ text: "🎨 Grafik dizayn", callback_data: "design" }],
-          ],
-        },
-      }
+  if (text == "📚 Kurslar") {
+    return onCourses(msg);
+  }
+
+  if (text == "✍️ Ro‘yxatdan o‘tish") {
+    if (!user) return;
+
+    user = await User.findOneAndUpdate({ chatId }, { action: "awaiting_name" });
+
+    return bot.sendMessage(chatId, `Ismingizni kiriting:`);
+  }
+
+  // action
+  if (user.action == "awaiting_name") {
+    console.log("name: ", text);
+
+    user = await User.findOneAndUpdate(
+      { chatId },
+      { action: "awaiting_phone", name: text }
     );
+
+    return bot.sendMessage(chatId, `Telefon nomeringiz kiriting:`);
+  }
+
+  if (user.action == "awaiting_phone") {
+    console.log("phone: ", text);
+
+    user = await User.findOneAndUpdate(
+      { chatId },
+      { action: "finish_registration", phone: text }
+    );
+
+    bot.sendMessage(
+      ADMIN_ID,
+      `Yangi xabar 🔔\n--FIO: ${user.name}\n--Telefon: ${text}`
+    );
+
+    return bot.sendMessage(chatId, `Tabriklaymiz siz ro'yhatdan o'tdingiz! ✅`);
   }
 
   return onError();
 });
 
 bot.on("callback_query", async function (query) {
-  const msg = query.message
-  const chatId = msg.chat.id;
-  const firstname = msg.chat.first_name;
+  const chatId = query.message.chat.id;
+  const firstname = query.message.chat.first_name;
   const data = query.data;
-
-  const messageId = msg.message_id
 
   if (data == "confirm_subscription") {
     const chatMember = await bot.getChatMember(CHANNEL_ID, chatId);
@@ -89,39 +105,26 @@ bot.on("callback_query", async function (query) {
     console.log(chatMember);
 
     if (chatMember.status == "kicked" || chatMember.status == "left") {
-      return bot.answerCallbackQuery(query.id, {
-        text: `Siz hali obuna bo'lmadingiz... ❌`,
-        show_alert: true
-      })
-    }
-
-    else {
-
-      bot.deleteMessage(chatId, messageId)
-
       return bot.sendMessage(
         chatId,
-        `
-          👋 Assalomu alaykum, ${firstname}!
-  
-  📚 100x Academy o‘quv markazining rasmiy botiga xush kelibsiz!
-  
-  Bu bot orqali siz:
-  • Kurslarimiz haqida batafsil ma’lumot olasiz  
-  • Kurslarga onlayn ro‘yxatdan o‘tishingiz mumkin  
-  • Jadval va to‘lovlar haqida ma’lumot olasiz  
-  
-  Quyidagi menyudan kerakli bo‘limni tanlang 👇
-  
-          `,
+        `Oldin shu kanalga obuna bo'ling @academy_100x_uz`,
         {
           reply_markup: {
-            keyboard: [
-              [{ text: "📚 Kurslar" }, { text: "✍️ Ro‘yxatdan o‘tish" }],
-              [{ text: "ℹ️ Markaz haqida" }, { text: "💬 Fikr bildirish" }],
-              [{ text: "❓ Yordam" }],
+            remove_keyboard: true,
+            inline_keyboard: [
+              [
+                {
+                  text: "100x Academy Xiva",
+                  url: "https://t.me/academy_100x_uz",
+                },
+              ],
+              [
+                {
+                  text: "Obunani tasdiqlash ✅",
+                  callback_data: "confirm_subscription",
+                },
+              ],
             ],
-            resize_keyboard: true,
           },
         }
       );

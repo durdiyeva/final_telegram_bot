@@ -1,35 +1,26 @@
-import User from "../../../models/user.js";
+import User from "../../../models/User.js";
 import { bot } from "../../bot.js";
+import onProfile from "./commands/onProfile.js";
+import onStart from "./commands/onStart.js";
 
-async function onCommand(msg) {
+async function onCommands(msg) {
   const chatId = msg.chat.id;
   const firstname = msg.chat.first_name;
   const text = msg.text;
 
   if (text == "/start") {
-    const existingUser = await User.findOne({ chatId: chatId });
-
-    if (!existingUser) {
-      const newUser = new User({
-        chatId: chatId,
-        firstname: firstname,
-        username: msg.chat.username,
-      });
-
-      newUser.save();
-    } else {
-      console.log(existingUser);
-    }
-
-    return bot.sendMessage(
-      chatId,
-      `Assalomu aleykum, xush kelibsiz, ${firstname}`
-    );
+    return onStart(msg);
   }
 
   if (text == "/help") {
     return bot.sendMessage(chatId, `Yordam kerakmi, ${firstname}?`);
   }
+
+  // let chatIds = [875054546, 544654665, 4564564];
+
+  // for (let cId of chatIds) {
+  //   bot.sendMessage(cId, "Salom");
+  // }
 
   if (text == "/users") {
     const userSoni = await User.countDocuments();
@@ -47,25 +38,10 @@ async function onCommand(msg) {
   }
 
   if (text == "/profile") {
-    const existingUser = await User.findOne({ chatId: chatId });
-
-    console.log(existingUser);
-
-    return bot.sendMessage(
-      chatId,
-      `
-Mening Profilim:\n
-|--chatId: ${existingUser.chatId}
-|--ism: ${existingUser.firstname} 
-|--username: ${existingUser.username}
-|--active: ${existingUser.active}
-|--balance: ${existingUser.balance}
-|___________
-    `
-    );
+    return onProfile(msg);
   }
 
   return bot.sendMessage(chatId, `Xatolik, buyruq topilmadi... /start bosing!`);
 }
 
-export default onCommand;
+export default onCommands;
